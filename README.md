@@ -44,7 +44,7 @@
 
 https://github.com/user-attachments/assets/10cbcc5f-4e70-45cf-bdc5-d6361e40bb86
 
-[🔗 在线体验](https://modelscope.cn/studios/gongjy/MiniMind-O) &nbsp;|&nbsp; [🔗 视频介绍](https://www.bilibili.com/video/BV1V1RsBcEMX)
+[🔗 在线体验 (Gradio)](https://modelscope.cn/studios/gongjy/MiniMind-O) &nbsp;|&nbsp; [🔗 视频介绍](https://www.bilibili.com/video/BV1V1RsBcEMX)
 
 
 </div>
