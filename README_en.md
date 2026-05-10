@@ -120,23 +120,32 @@ MiniMind-O attempts to fill this gap: speech and text are connected directly at 
 ```bash
 # Clone the repository
 git clone --depth 1 https://github.com/jingyaogong/minimind-o
-# Install dependencies
+# Install dependencies (uv recommended)
+uv sync
+```
+
+<details>
+<summary>Alternatively, install with pip</summary>
+
+```bash
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
+
+</details>
 
 ### 2' Download resources
 
 ```bash
 # Download SenseVoice-Small audio encoder to ./model/SenseVoiceSmall
-modelscope download --model gongjy/SenseVoiceSmall --local_dir ./model/SenseVoiceSmall
+uv run modelscope download --model gongjy/SenseVoiceSmall --local_dir ./model/SenseVoiceSmall
 # Download SigLIP2 vision encoder to ./model/siglip2-base-p32-256-ve
-modelscope download --model gongjy/siglip2-base-p32-256-ve --local_dir ./model/siglip2-base-p32-256-ve
+uv run modelscope download --model gongjy/siglip2-base-p32-256-ve --local_dir ./model/siglip2-base-p32-256-ve
 # Download Mimi audio codec to ./model/mimi
-modelscope download --model gongjy/mimi --local_dir ./model/mimi
+uv run modelscope download --model gongjy/mimi --local_dir ./model/mimi
 # Download CAM++ speaker encoder to ./model/campplus
-modelscope download --model gongjy/campplus --local_dir ./model/campplus
+uv run modelscope download --model gongjy/campplus --local_dir ./model/campplus
 # Download MiniMind LLM weights to ./out (used as the language backbone for training Omni)
-modelscope download --model gongjy/minimind-3o-pytorch llm_768.pth --local_dir ./out
+uv run modelscope download --model gongjy/minimind-3o-pytorch llm_768.pth --local_dir ./out
 ```
 
 You can also `git clone` the corresponding repos from the [ModelScope Collection](https://modelscope.cn/collections/gongjy/MiniMind-O) or [HuggingFace Collection](https://huggingface.co/collections/jingyaogong/minimind-o) (LFS required); details omitted here.
@@ -162,20 +171,20 @@ minimind-o/
 
 ```bash
 # Download released weights to ./out
-modelscope download --model gongjy/minimind-3o-pytorch --local_dir ./out
+uv run modelscope download --model gongjy/minimind-3o-pytorch --local_dir ./out
 ```
 
 ### 2' Command-line chat
 
 ```bash
-python eval_omni.py --load_from model --weight sft_omni
+uv run python eval_omni.py --load_from model --weight sft_omni
 ```
 
 To use the Transformers-format model, download the model directory first:
 
 ```bash
 git clone https://huggingface.co/jingyaogong/minimind-3o
-python eval_omni.py --load_from minimind-3o
+uv run python eval_omni.py --load_from minimind-3o
 ```
 
 ### 3' Launch WebUI (optional)
@@ -185,7 +194,7 @@ python eval_omni.py --load_from minimind-3o
 #    automatically scans this directory for sub-folders that contain weight files; it
 #    raises an error if none is found.
 cp -r minimind-3o ./scripts/minimind-3o
-cd scripts && python web_demo_omni.py
+cd scripts && uv run python web_demo_omni.py
 ```
 
 ## Ⅱ 🛠️ Training
@@ -193,9 +202,8 @@ cd scripts && python web_demo_omni.py
 <details style="color:rgb(128,128,128)">
 <summary>Verify Torch is using CUDA</summary>
 
-```python
-import torch
-print(torch.cuda.is_available())
+```bash
+uv run python -c "import torch; print(torch.cuda.is_available())"
 ```
 
 If unavailable, please download the matching `.whl` from [torch_stable](https://download.pytorch.org/whl/torch_stable.html) and install it manually.
@@ -211,9 +219,9 @@ For a quick start, downloading only the `_mini` parquet files from the [dataset 
 The recommended mini training pipeline is shown below. It is meant to be run from the `trainer/` directory; equivalently, run `cd trainer && bash train.sh`:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 torchrun --master_port 29560 --nproc_per_node 1 train_sft_omni.py --learning_rate 5e-4 --data_path ../dataset/sft_t2a_mini.parquet --epochs 1 --batch_size 40 --use_compile 1 --from_weight llm --save_weight sft_zero --max_seq_len 512 --use_wandb --use_moe 0
-CUDA_VISIBLE_DEVICES=0 torchrun --master_port 29560 --nproc_per_node 1 train_sft_omni.py --learning_rate 5e-4 --data_path ../dataset/sft_a2a_mini.parquet --epochs 1 --batch_size 40 --use_compile 0 --from_weight sft_zero --save_weight sft_zero --max_seq_len 640 --mode audio_proj --use_wandb --use_moe 0
-CUDA_VISIBLE_DEVICES=0 torchrun --master_port 29560 --nproc_per_node 1 train_sft_omni.py --learning_rate 2e-5 --data_path ../dataset/sft_a2a_mini.parquet --epochs 1 --batch_size 16 --use_compile 0 --from_weight sft_zero --save_weight sft_zero --max_seq_len 768 --use_wandb --use_moe 0
+CUDA_VISIBLE_DEVICES=0 uv run torchrun --master_port 29560 --nproc_per_node 1 train_sft_omni.py --learning_rate 5e-4 --data_path ../dataset/sft_t2a_mini.parquet --epochs 1 --batch_size 40 --use_compile 1 --from_weight llm --save_weight sft_zero --max_seq_len 512 --use_wandb --use_moe 0
+CUDA_VISIBLE_DEVICES=0 uv run torchrun --master_port 29560 --nproc_per_node 1 train_sft_omni.py --learning_rate 5e-4 --data_path ../dataset/sft_a2a_mini.parquet --epochs 1 --batch_size 40 --use_compile 0 --from_weight sft_zero --save_weight sft_zero --max_seq_len 640 --mode audio_proj --use_wandb --use_moe 0
+CUDA_VISIBLE_DEVICES=0 uv run torchrun --master_port 29560 --nproc_per_node 1 train_sft_omni.py --learning_rate 2e-5 --data_path ../dataset/sft_a2a_mini.parquet --epochs 1 --batch_size 16 --use_compile 0 --from_weight sft_zero --save_weight sft_zero --max_seq_len 768 --use_wandb --use_moe 0
 ```
 
 ### 3' Test the trained model (optional)
@@ -221,7 +229,7 @@ CUDA_VISIBLE_DEVICES=0 torchrun --master_port 29560 --nproc_per_node 1 train_sft
 Make sure the model `*.pth` to be tested is placed under `./out/`.
 
 ```bash
-python eval_omni.py --weight sft_omni
+uv run python eval_omni.py --weight sft_omni
 ```
 
 # 📌 Model Details

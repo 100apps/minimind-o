@@ -6,3 +6,8 @@ __pycache__/
 .claude/
 .specstory/
 .env
+
+out/
+output_audio/
+model/
+dataset/
