@@ -5,6 +5,8 @@ description = "MiniMind-O: Train a Tiny Omni Model from Scratch."
 readme = "README.md"
 requires-python = ">=3.10,<3.11"
 dependencies = [
+    "addict>=2.4.0",
+    "flask-cors>=4.0.0",
     "flask-sock==0.7.0",
     "funasr==1.3.1",
     "gradio>=5.0.0",

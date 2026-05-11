@@ -69,7 +69,7 @@ def build_ids(prompt, history):
 def _mimi_decode(frames):
     codes = [f for f in frames if f and len(f) == 8]
     if not codes or not M['mimi']: return None
-    mc = torch.tensor(codes, dtype=torch.long).T.unsqueeze(0)
+    mc = torch.tensor(codes, dtype=torch.long, device=M['device']).T.unsqueeze(0)
     mc = torch.where(mc >= 2049, torch.zeros_like(mc), mc)
     with torch.no_grad():
         au = M['mimi'].decode(mc).audio_values.squeeze().cpu().numpy()
@@ -197,14 +197,15 @@ def run_generate(x, audio_inputs, audio_lens, pixel_values, **kw):
             audio_inputs=audio_inputs, audio_lens=audio_lens, pixel_values=pixel_values, **kw)
 
 def load_main_model(model_path, model_name):
+    _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     with MODEL_LOCK:
         [sys.modules.pop(k) for k in list(sys.modules) if 'transformers_modules' in k]
         M.pop('model', None); M.pop('tokenizer', None)
         if torch.cuda.is_available(): torch.cuda.empty_cache()
         tok = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         m = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True)
-        vision_encoder, vision_processor = MiniMindOmni.load_vision('../model/siglip2-base-p32-256-ve')
-        audio_encoder, audio_processor = MiniMindOmni.load_sensevoice('../model/SenseVoiceSmall')
+        vision_encoder, vision_processor = MiniMindOmni.load_vision(os.path.join(_root, 'model', 'siglip2-base-p32-256-ve'))
+        audio_encoder, audio_processor = MiniMindOmni.load_sensevoice(os.path.join(_root, 'model', 'SenseVoiceSmall'))
         object.__setattr__(m, 'vision_encoder', vision_encoder)
         object.__setattr__(m, 'vision_processor', vision_processor)
         object.__setattr__(m, 'audio_encoder', audio_encoder)
@@ -442,8 +443,9 @@ def realtime(ws):
 
 def init_model(args):
     M['cfg'] = args; M['device'] = args.device
+    _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     with contextlib.redirect_stdout(io.StringIO()):
-        M['asr'] = AutoModel(model='../model/SenseVoiceSmall', trust_remote_code=True, device=args.device, disable_update=True)
+        M['asr'] = AutoModel(model=os.path.join(_root, 'model', 'SenseVoiceSmall'), trust_remote_code=True, device=args.device, disable_update=True)
     M['models'] = scan_hf_models(args.load_from)
     if not M['models']:
         raise RuntimeError(f"未在 {os.path.abspath(args.load_from)} 找到 transformers 模型")
@@ -451,7 +453,7 @@ def init_model(args):
     load_main_model(M['models'][model_name], model_name)
     try:
         from transformers import MimiModel
-        M['mimi'] = MimiModel.from_pretrained('../model/mimi').eval().to(args.device)
+        M['mimi'] = MimiModel.from_pretrained(os.path.join(_root, 'model', 'mimi')).eval().to(args.device)
         if args.device != 'cpu': M['mimi'] = M['mimi'].half()
         print('Mimi model loaded')
     except: M['mimi'] = None
@@ -459,7 +461,7 @@ def init_model(args):
         from modelscope.models.audio.sv.DTDNN import CAMPPlus
         M['campplus'] = CAMPPlus(feat_dim=80, embedding_size=192, growth_rate=32, bn_size=4,
                                  init_channels=128, config_str='batchnorm-relu', memory_efficient=True)
-        sd = torch.load('../model/campplus/campplus_cn_common.pt', map_location='cpu')
+        sd = torch.load(os.path.join(_root, 'model', 'campplus', 'campplus_cn_common.pt'), map_location='cpu')
         M['campplus'].load_state_dict({k: v.float() for k, v in sd.items()})
         M['campplus'] = M['campplus'].eval().to(args.device)
         M['mel_fn'] = torchaudio.transforms.MelSpectrogram(
@@ -470,8 +472,8 @@ def init_model(args):
     except Exception as e:
         M['campplus'], M['mel_fn'] = None, None
         print(f'CAM++ load failed: {e}')
-    M['vad_path'] = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'model', 'vad', 'silero_vad.onnx')
-    spk_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'model', 'speaker')
+    M['vad_path'] = os.path.join(_root, 'model', 'vad', 'silero_vad.onnx')
+    spk_dir = os.path.join(_root, 'model', 'speaker')
     for fn, group in [('voices.pt', 'builtin'), ('voices_unseen.pt', 'unseen'), (CLONE_FILE, 'manual')]:
         fp = os.path.join(spk_dir, fn)
         if os.path.exists(fp):
@@ -486,7 +488,7 @@ def init_model(args):
         au = torch.full((1, 8, 3), 2049, dtype=torch.long, device=args.device)
         M['model'].forward(torch.cat((au, ids.unsqueeze(1)), dim=1))
         if M['model'].audio_encoder: M['model'].audio_encoder(torch.zeros(1, 100, 560, device=args.device), torch.tensor([100], device=args.device))
-        if M['mimi']: M['mimi'].decode(torch.zeros(1, 8, 1, dtype=torch.long))
+        if M['mimi']: M['mimi'].decode(torch.zeros(1, 8, 1, dtype=torch.long, device=args.device))
     print('Warmup done!')
 
 
