@@ -185,10 +185,15 @@ uv run python eval_omni.py --load_from model --weight sft_omni
 
 ```bash
 git clone https://huggingface.co/jingyaogong/minimind-3o
+git clone https://huggingface.co/jingyaogong/minimind-3o-moe
 uv run python eval_omni.py --load_from minimind-3o
 ```
 
 ### 3' 启动 WebUI（可选）
+
+```bash
+uv run .\webui\web_demo.py    
+```
 
 ```bash
 # ⚠️ 须先将 transformers 格式模型文件夹复制到 ./scripts/ 目录下，web_demo_omni 脚本会自动扫描该目录下包含权重文件的子文件夹，如不存在则报错
