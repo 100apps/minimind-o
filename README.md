@@ -192,7 +192,7 @@ uv run python eval_omni.py --load_from minimind-3o
 ### 3' 启动 WebUI（可选）
 
 ```bash
-uv run .\webui\web_demo.py    
+uv run webui/web_demo.py    
 ```
 
 ```bash

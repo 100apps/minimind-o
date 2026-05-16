@@ -266,7 +266,7 @@ if __name__ == '__main__':
     parser.add_argument('--audio_encoder', default='../model/SenseVoiceSmall', type=str)
     parser.add_argument('--vision_model', default='../model/siglip2-base-p32-256-ve', type=str)
     parser.add_argument('--mimi_path', default='../model/mimi', type=str)
-    parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu', type=str)
+    parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu', type=str)
     parser.add_argument('--open_thinking', default=0, type=int, choices=[0, 1])
     parser.add_argument('--top_p', default=0.85, type=float)
     parser.add_argument('--port', default=8888, type=int)

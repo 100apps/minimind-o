@@ -202,6 +202,7 @@ def load_main_model(model_path, model_name):
         [sys.modules.pop(k) for k in list(sys.modules) if 'transformers_modules' in k]
         M.pop('model', None); M.pop('tokenizer', None)
         if torch.cuda.is_available(): torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available(): torch.mps.empty_cache()
         tok = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         m = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True)
         vision_encoder, vision_processor = MiniMindOmni.load_vision(os.path.join(_root, 'model', 'siglip2-base-p32-256-ve'))
@@ -495,7 +496,7 @@ def init_model(args):
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('--load_from', default='./', help='模型权重搜索目录；目录下可放多个 HF 格式模型，WebUI 会自动扫描并允许切换。')
-    p.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu', help='推理设备；CUDA 可用时默认 cuda。显存不足或排查环境问题时可改为 cpu。')
+    p.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu', help='推理设备；CUDA 可用时默认 cuda，其次 mps（Apple Silicon），最后 cpu。显存不足或排查环境问题时可改为 cpu。')
     p.add_argument('--port', default=7860, type=int, help='WebUI 服务端口；端口被占用或需要同时启动多个实例时调整。')
     p.add_argument('--audio_chunk_frames', default=4, type=int, help='流式播放每次解码的 Mimi frame 数；默认 4 约 320ms。WebUI 播放卡顿时可调大到 8/12，低延迟优先时保持 4。')
     p.add_argument('--audio_overlap', default=2, type=int, help='分块 Mimi 解码的重叠帧数；默认 2 用于缓解块边界断裂。一般不需要调整，边界杂音明显时可适当增大。')
