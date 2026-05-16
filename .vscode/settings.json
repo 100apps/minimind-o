@@ -1,0 +1,26 @@
+{
+  // 让 VSCode / Cursor 直接使用项目内的 uv 虚拟环境，避免与系统 Python 混用
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}",
+    "${workspaceFolder}/model",
+    "${workspaceFolder}/trainer",
+    "${workspaceFolder}/scripts"
+  ],
+  "python.terminal.activateEnvironment": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/*.pyc": true
+  },
+  "search.exclude": {
+    "**/.venv": true,
+    "**/out": true,
+    "**/dataset": true,
+    "**/output_audio": true,
+    "**/model/SenseVoiceSmall": true,
+    "**/model/siglip2-base-p32-256-ve": true,
+    "**/model/mimi": true,
+    "**/model/campplus": true
+  }
+}

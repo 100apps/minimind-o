@@ -1,0 +1,206 @@
+{
+  // ============================================================
+  // MiniMind-O VSCode 调试配置
+  // 所有配置默认使用项目内 .venv 解释器；macOS 默认走 mps 设备。
+  // 如需 CUDA 机器调试，改对应 --device 即可（trainer 默认走 device 自动识别）。
+  // ============================================================
+  "version": "0.2.0",
+  "configurations": [
+    // -------------------- 推理：CLI --------------------
+    {
+      "name": "Eval Omni (native pth)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/eval_omni.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false,
+      "args": [
+        "--load_from", "model",
+        "--weight", "sft_omni",
+        "--mode", "0",
+        "--decode_audio", "1"
+      ],
+      "env": {
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    {
+      "name": "Eval Omni (transformers minimind-3o)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/eval_omni.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false,
+      "args": [
+        "--load_from", "minimind-3o",
+        "--mode", "0"
+      ],
+      "env": {
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+
+    // -------------------- WebUI / Gradio --------------------
+    {
+      "name": "WebUI (webui/web_demo.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/webui/web_demo.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false,
+      "args": [
+        "--load_from", "./",
+        "--port", "7860"
+      ],
+      "env": {
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    {
+      "name": "Gradio Demo (scripts/web_demo_omni.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/web_demo_omni.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/scripts",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false,
+      "args": [
+        "--load_from", "./",
+        "--port", "8888"
+      ],
+      "env": {
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+
+    // -------------------- 训练（Mini 三阶段）--------------------
+    // 调试场景下不走 torchrun，单卡直跑 train_sft_omni.py 即可触发断点。
+    {
+      "name": "SFT T2A Mini (stage 1: from llm)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/trainer/train_sft_omni.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/trainer",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false,
+      "args": [
+        "--learning_rate", "5e-4",
+        "--data_path", "../dataset/sft_t2a_mini.parquet",
+        "--epochs", "1",
+        "--batch_size", "2",
+        "--use_compile", "0",
+        "--from_weight", "llm",
+        "--save_weight", "sft_zero",
+        "--max_seq_len", "512",
+        "--use_moe", "0",
+        "--num_workers", "0",
+        "--dtype", "float16"
+      ],
+      "env": {
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_VISIBLE_DEVICES": "0"
+      }
+    },
+    {
+      "name": "SFT A2A Mini (stage 2: audio_proj only)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/trainer/train_sft_omni.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/trainer",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false,
+      "args": [
+        "--learning_rate", "5e-4",
+        "--data_path", "../dataset/sft_a2a_mini.parquet",
+        "--epochs", "1",
+        "--batch_size", "2",
+        "--use_compile", "0",
+        "--from_weight", "sft_zero",
+        "--save_weight", "sft_zero",
+        "--max_seq_len", "640",
+        "--mode", "audio_proj",
+        "--use_moe", "0",
+        "--num_workers", "0",
+        "--dtype", "float16"
+      ],
+      "env": {
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_VISIBLE_DEVICES": "0"
+      }
+    },
+    {
+      "name": "SFT A2A Mini (stage 3: full)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/trainer/train_sft_omni.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/trainer",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false,
+      "args": [
+        "--learning_rate", "2e-5",
+        "--data_path", "../dataset/sft_a2a_mini.parquet",
+        "--epochs", "1",
+        "--batch_size", "2",
+        "--use_compile", "0",
+        "--from_weight", "sft_zero",
+        "--save_weight", "sft_zero",
+        "--max_seq_len", "768",
+        "--use_moe", "0",
+        "--num_workers", "0",
+        "--dtype", "float16"
+      ],
+      "env": {
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+        "PYTHONUNBUFFERED": "1",
+        "CUDA_VISIBLE_DEVICES": "0"
+      }
+    },
+
+    // -------------------- 权重格式转换 --------------------
+    {
+      "name": "Convert pth → Transformers",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/convert_omni.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/scripts",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false,
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+
+    // -------------------- 通用：当前打开的文件 --------------------
+    {
+      "name": "Python: 当前文件",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${fileDirname}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false,
+      "env": {
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  ]
+}
